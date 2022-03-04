@@ -8,7 +8,7 @@ import datetime
 
 quit_flag = False
 
-
+# THIS METHOD IS CURRENTLY PRESENT TO KEEP PROGRAM RUNNING
 # to listen to any peers requiring uploads
 def upload_server():
     upload_socket = socket.socket()
@@ -29,6 +29,7 @@ def upload_server():
     upload_socket.close()
 
 
+# THIS METHOD IS CURRENTLY PRESENT TO KEEP PROGRAM RUNNING
 # peer connection
 def peer_connection(client_socket):
     data = client_socket.recv(1024).decode()
@@ -73,32 +74,6 @@ def send_requests(note, server_host, server_port):
     client_socket.close()
 
 
-# to send download requests to other peers
-def peer_requests(note, peer_host, peer_port, rfc):
-    client_socket = socket.socket()
-    client_socket.connect((peer_host, peer_port))
-    client_socket.send(note.encode())
-    response = client_socket.recv(1024).decode()
-    print('response from the peer :')
-    print(response)
-    data_list = response.split('\n')
-    if data_list[0].split(' ')[1] == '200':
-        name = "rfc" + str(rfc) + ".txt"
-        f = open(name, 'wb')
-        while (True):
-            d = client_socket.recv(1024)
-            if d:
-                f.write(d)
-                break
-            else:
-                f.close()
-                print('downloaded file sucessfully')
-                break
-    else:
-        print('file name not found')
-    client_socket.close()
-
-
 # handle quitting
 def quit(server_host, server_port):
     note = "EXIT P2P-CI/1.0\nHost: " + host + '\n' + "Port: " + str(port)
@@ -123,12 +98,9 @@ def handle_input():
     # after the client joins sucessfully give functionality options
     while (True):
         print("What do you want to do?Enter number corresponding to an option you choose")
-        print("1. Add RFC's")
         print("5. Quit")
         option = int(input())
-        if (option == 1):
-            add_rfc(server_host, server_port)
-        elif (option == 5):
+        if (option == 5):
             quit(server_host, server_port)
             break
         else:
