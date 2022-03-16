@@ -76,7 +76,7 @@ def getActivePeers(serverHost, serverPort):
     note = "GET P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
     sendRequestToServer(note, serverHost, serverPort)
 
-
+# Get the IP address from peer machine
 def get_ip(ifaces=['en0']):
     if isinstance(ifaces, str):
         ifaces = [ifaces]
@@ -92,34 +92,35 @@ def get_ip(ifaces=['en0']):
 
 
 # Main client functionality
-# The IP address and port number for the client
-peerHost = input("Enter an unused hostname:")
-peerPort = int(input("Enter an unused port:"))
+if __name__ == '__main__':
+    # The IP address and port number for the client
+    peerHost = input("Enter an unused hostname:")
+    peerPort = int(input("Enter an unused port:"))
 
-# The IP address and port number for the server
-serverHost = input("Enter the hostname for the Index Server:")
-serverPort = 7734
+    # The IP address and port number for the server
+    serverHost = input("Enter the hostname for the Index Server:")
+    serverPort = 7734
 
-# Message sent to join the system
-request = "JOIN P2P\nHost: " + peerHost + '\n' + "Port: " + str(peerPort)
-sendRequestToServer(request, serverHost, serverPort)
+    # Message sent to join the system
+    request = "JOIN P2P\nHost: " + peerHost + '\n' + "Port: " + str(peerPort)
+    sendRequestToServer(request, serverHost, serverPort)
 
-uploadThread = Thread(target=peerServer, args=(peerPort,))
-# destroy this upload thread on quitting
-uploadThread.daemon = True
-uploadThread.start()
+    uploadThread = Thread(target=peerServer, args=(peerPort,))
+    # destroy this upload thread on quitting
+    uploadThread.daemon = True
+    uploadThread.start()
 
-# Handle input from the client
-while (True):
-    print("What do you want to do? Enter number corresponding to an option you choose:")
-    print("1. Send image")
-    print("2. Request index from server")
-    # Functionality of centralized server
-    option = int(input())
-    if (option == 1):
-        message = input()
-        sendToPeer(message)
-    elif (option == 2):
-        getActivePeers(serverHost, serverPort)
-    else:
-        print('please enter a valid choice')
+    # Handle input from the client
+    while (True):
+        print("What do you want to do? Enter number corresponding to an option you choose:")
+        print("1. Send image")
+        print("2. Request index from server")
+        # Functionality of centralized server
+        option = int(input())
+        if (option == 1):
+            message = input()
+            sendToPeer(message)
+        elif (option == 2):
+            getActivePeers(serverHost, serverPort)
+        else:
+            print('please enter a valid choice')

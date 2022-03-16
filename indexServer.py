@@ -62,26 +62,26 @@ def newConnection(clientSocket):
 
 
 # Functionality of centralized server
+if __name__ == '__main__':
+    # Create a new socket object
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Create a new socket object
-serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Set the IP address and port for the central server
+    serverHost = input("Enter the IP address of the central server: ")
+    serverPort = 7734
 
-# Set the IP address and port for the central server
-serverHost = input("Enter the IP address of the central server: ")
-serverPort = 7734
+    # Bind to the port
+    serverSocket.bind((serverHost, serverPort))
 
-# Bind to the port
-serverSocket.bind((serverHost, serverPort))
+    # Wait for connection
+    serverSocket.listen(5)
+    print("Index Server is running...")
+    while (True):
+        # Establish connection with client
+        clientSocket, clientAddress = serverSocket.accept()
 
-# Wait for connection
-serverSocket.listen(5)
-print("Index Server is running...")
-while (True):
-    # Establish connection with client
-    clientSocket, clientAddress = serverSocket.accept()
-
-    print('Got connection from', clientAddress)
-    newThread = Thread(target=newConnection, args=(clientSocket,))
-    newThread.start()
-print('shutting down central server')
-serverSocket.close()
+        print('Got connection from', clientAddress)
+        newThread = Thread(target=newConnection, args=(clientSocket,))
+        newThread.start()
+    print('shutting down central server')
+    serverSocket.close()
