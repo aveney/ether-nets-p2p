@@ -54,10 +54,10 @@ def newConnection(clientSocket):
     # Determine the type of message received from the client
     for line in messageList:
         print(line)
-    if messageList[0].split(' ')[0] == 'JOIN':
-        P2P.peerID += 1
+    if messageList[0].split(' ')[0] == 'J':
         clientJoin(messageList, clientSocket, P2P.peerID)
-    elif messageList[0].split(' ')[0] == 'GET':
+        P2P.peerID += 1
+    elif messageList[0].split(' ')[0] == 'R':
         provideList(messageList, clientSocket)
 
 

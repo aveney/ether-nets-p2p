@@ -13,6 +13,7 @@ class P2P:
 # This will handle the uploading of images/messages
 def peerServer(peerPort):
     # Create socket for peer server
+    print("Peer instructions")
     peerServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     peerServer.bind((get_ip(), peerPort))
     peerServer.listen(2)
@@ -54,9 +55,9 @@ def sendRequestToServer(request, serverHost, serverPort):
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverHost, serverPort))
     clientSocket.send(request.encode())
-    response = clientSocket.recv(1024)
 
     # Get the updated dictionary of active peers as a byte string
+    response = clientSocket.recv(1024)
     # Convert the byte string to a dictionary object
     deserializedActivePeers = pickle.loads(response)
     P2P.activePeers = deserializedActivePeers
@@ -66,15 +67,19 @@ def sendRequestToServer(request, serverHost, serverPort):
 
 
 # Handle quitting
-def quitConnection(serverHost, serverPort):
-    note = "EXIT P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
-    sendRequestToServer(note, serverHost, serverPort)
+# def quitConnection(serverHost, serverPort):
+#     note = "EXIT P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
+#     sendRequestToServer(note, serverHost, serverPort)
 
 
 # Request dictionary of active peers from the index server
 def getActivePeers(serverHost, serverPort):
-    note = "GET P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
+    note = "R \n GET \nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
     sendRequestToServer(note, serverHost, serverPort)
+
+def joinIndexServer(serverHost, serverPort):
+    request = "J \nHost: " + peerHost + '\n' + "Port: " + str(peerPort) + "\nJOIN"
+    sendRequestToServer(request, serverHost, serverPort)
 
 # Get the IP address from peer machine
 def get_ip(ifaces=['en0']):
@@ -102,25 +107,28 @@ if __name__ == '__main__':
     serverPort = 7734
 
     # Message sent to join the system
-    request = "JOIN P2P\nHost: " + peerHost + '\n' + "Port: " + str(peerPort)
-    sendRequestToServer(request, serverHost, serverPort)
+    joinIndexServer(serverHost,serverPort)
 
-    uploadThread = Thread(target=peerServer, args=(peerPort,))
-    # destroy this upload thread on quitting
-    uploadThread.daemon = True
-    uploadThread.start()
+    if (len(P2P.activePeers) > 1):
+        print("Wait for instructions from event organizer...")
+        uploadThread = Thread(target=peerServer, args=(peerPort,))
+        # destroy this upload thread on quitting
+        uploadThread.daemon = True
+        uploadThread.start()
+    # Else, event coordinator processes
+
 
     # Handle input from the client
-    while (True):
-        print("What do you want to do? Enter number corresponding to an option you choose:")
-        print("1. Send image")
-        print("2. Request index from server")
-        # Functionality of centralized server
-        option = int(input())
-        if (option == 1):
-            message = input()
-            sendToPeer(message)
-        elif (option == 2):
-            getActivePeers(serverHost, serverPort)
-        else:
-            print('please enter a valid choice')
+    # while (True):
+    #     print("What do you want to do? Enter number corresponding to an option you choose:")
+    #     print("1. Send image")
+    #     print("2. Request index from server")
+    #     # Functionality of centralized server
+    #     option = int(input())
+    #     if (option == 1):
+    #         message = input()
+    #         sendToPeer(message)
+    #     elif (option == 2):
+    #         getActivePeers(serverHost, serverPort)
+    #     else:
+    #         print('please enter a valid choice')
