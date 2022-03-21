@@ -11,54 +11,62 @@ class P2P:
 
 
 # Client joining the network
-def clientJoin(dataList, clientSocket, peerID):
+def unpackJoin(messageData, clientSocket, peerID):
+    message = messageData[2:].decode()
+    peerInfo = message[1:]
+    print(peerInfo)
     # Get IP and port from client
-    host = dataList[1].split(':')[1]
-    port = dataList[2].split(':')[1]
+    host = peerInfo.split(' ')[0]
+    port = peerInfo.split(' ')[1]
 
     # List for new client information
     clientInfo = [host, port, "Absent"]
     P2P.activePeers[peerID] = clientInfo
     print("Current Index Server: ")
     print(P2P.activePeers)
-
-    # Convert dictionary of active peers to a byte string
-    serializedActivePeers = pickle.dumps(P2P.activePeers)
-    # Send the string
-    clientSocket.send(serializedActivePeers)
-    clientSocket.close()
+    provideActivePeers(clientSocket)
 
 
 # Send active peers dictionary to the requesting client
-def provideList(dataList, clientSocket):
+def provideActivePeers(clientSocket):
     # Get IP and port from client
-    host = dataList[1].split(':')[1]
-    port = dataList[2].split(':')[1]
+    #host = messageData[1].split(':')[1]
+    #port = messageData[2].split(':')[1]
 
     print("Sending active peers list...")
 
+    messageType = 'L'.encode()
     # Convert dictionary of active peers to a byte string
     serializedActivePeers = pickle.dumps(P2P.activePeers)
+    message = messageType + serializedActivePeers
+    messageSize = len(message)
+
+    message = messageSize.to_bytes(2, 'little') + message
     # Send the string
-    clientSocket.send(serializedActivePeers)
+    clientSocket.send(message)
     clientSocket.close()
 
 
 # Handle new requests from clients
 def newConnection(clientSocket):
     # Received a message from the client
-    message = clientSocket.recv(1024).decode()
+    message = clientSocket.recv(1024)
     print("New request from client")
-    messageList = message.split('\n')
-    # print(messageList)
+    messageContent = message[2:]
+    messageType = messageContent[:1]
     # Determine the type of message received from the client
-    for line in messageList:
-        print(line)
-    if messageList[0].split(' ')[0] == 'J':
-        clientJoin(messageList, clientSocket, P2P.peerID)
+    if (messageType == b'J'):
+        unpackJoin(message, clientSocket, P2P.peerID)
         P2P.peerID += 1
-    elif messageList[0].split(' ')[0] == 'R':
-        provideList(messageList, clientSocket)
+    # print(messageList)
+
+    # for line in messageList:
+    #     print(line)
+    # if messageList[0].split(' ')[0] == 'J':
+    #     clientJoin(messageList, clientSocket, P2P.peerID)
+    #     P2P.peerID += 1
+    # elif messageList[0].split(' ')[0] == 'R':
+    #     provideActivePeers(messageList, clientSocket)
 
 
 # Functionality of centralized server
