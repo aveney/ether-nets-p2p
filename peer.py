@@ -153,6 +153,35 @@ def get_ip(ifaces=['en0']):
             return ipv4
     return ''
 
+def sendPeerAcknowledgementStatement():
+    # Sending Acknowledge Statement to the peers
+    # Encode the message type
+    messageType = 'A'.encode()
+
+    # Fill message content
+    messageContent = "Image Sent"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message to peer to tell that image was sent
+    #sendToPeer(message)
+    peerSocket.send(message)
+    peerSocket.close()
+
+def unpackedAcknowledgementStatement(message):
+    messageContent = message[2:]
+    depackAcknowledgement = messageContent[1:]
+    print(message)
+
+
+
 
 # Main client functionality
 if __name__ == '__main__':
@@ -194,3 +223,4 @@ if __name__ == '__main__':
             sendActivePeers(peerSocket)
         else:
             print('please enter a valid choice')
+

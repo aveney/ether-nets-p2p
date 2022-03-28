@@ -68,6 +68,43 @@ def newConnection(clientSocket):
     # elif messageList[0].split(' ')[0] == 'R':
     #     provideActivePeers(messageList, clientSocket)
 
+def indexAcknowledgeStatement():
+    #Sending Acknowledge Statement to Index Server
+    # Encode the message type
+    messageType = 'A'.encode()
+
+    # Fill message content
+    messageContent = "Message Sent"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message
+    peerSocket.send(message)
+    peerSocket.close()
+
+def unpackingIndexAcknowledgeStatement(message):
+    messageContent = message[2:]
+    depackAcknowledgement = messageContent[1:]
+    print(message)
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Functionality of centralized server
 if __name__ == '__main__':
