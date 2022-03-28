@@ -9,56 +9,89 @@ class P2P:
 
     peerID = 0
 
+    points = 0;
+
 
 # Client joining the network
-def clientJoin(dataList, clientSocket, peerID):
+def unpackJoin(messageData, clientSocket, peerID):
+    message = messageData[2:].decode()
+    peerInfo = message[1:]
+    print("Unpacking join")
+    print(peerInfo)
     # Get IP and port from client
-    host = dataList[1].split(':')[1]
-    port = dataList[2].split(':')[1]
+    host = peerInfo.split(' ')[0]
+    port = peerInfo.split(' ')[1]
 
     # List for new client information
     clientInfo = [host, port, "Absent"]
     P2P.activePeers[peerID] = clientInfo
     print("Current Index Server: ")
     print(P2P.activePeers)
+    provideActivePeers(clientSocket)
 
-    # Convert dictionary of active peers to a byte string
-    serializedActivePeers = pickle.dumps(P2P.activePeers)
-    # Send the string
-    clientSocket.send(serializedActivePeers)
-    clientSocket.close()
+def unpackImageResponse(messageData):
+    # peer Id is hard coded right now
+    # waiting for P message type to be done
 
+    print("made it to unpack image response")
+    message = messageData[2:].decode()
+    print(message)
+
+    peerHost = message.split(' ')[1]
+    peerPort =  int(message.split(' ')[3])
+    peerResponse =  message.split(' ')[5]
+
+    if (peerResponse == "yes"):
+        P2P.activePeers[1] = [str(peerHost), peerPort, "Present"] # hardcoded peerID
+    elif (peerResponse == "no"):
+        P2P.activePeers[1] = [str(peerHost), peerPort, "Absent"]
+    else:
+        print("Something went wrong when verifying image")
+
+    print(P2P.activePeers[1])
 
 # Send active peers dictionary to the requesting client
-def provideList(dataList, clientSocket):
+def provideActivePeers(clientSocket):
     # Get IP and port from client
-    host = dataList[1].split(':')[1]
-    port = dataList[2].split(':')[1]
+    #host = messageData[1].split(':')[1]
+    #port = messageData[2].split(':')[1]
 
     print("Sending active peers list...")
 
+    messageType = 'L'.encode()
     # Convert dictionary of active peers to a byte string
     serializedActivePeers = pickle.dumps(P2P.activePeers)
+    message = messageType + serializedActivePeers
+    messageSize = len(message)
+
+    message = messageSize.to_bytes(2, 'little') + message
     # Send the string
-    clientSocket.send(serializedActivePeers)
+    clientSocket.send(message)
     clientSocket.close()
 
 
 # Handle new requests from clients
 def newConnection(clientSocket):
     # Received a message from the client
-    message = clientSocket.recv(1024).decode()
+    message = clientSocket.recv(1024)
     print("New request from client")
-    messageList = message.split('\n')
-    # print(messageList)
+    messageContent = message[2:]
+    messageType = messageContent[:1]
     # Determine the type of message received from the client
-    for line in messageList:
-        print(line)
-    if messageList[0].split(' ')[0] == 'J':
-        clientJoin(messageList, clientSocket, P2P.peerID)
+    if (messageType == b'J'):
+        unpackJoin(message, clientSocket, P2P.peerID)
         P2P.peerID += 1
-    elif messageList[0].split(' ')[0] == 'R':
-        provideList(messageList, clientSocket)
+    if(messageType == b'U'):
+        unpackImageResponse(message)
+    # print(messageList)
+
+    # for line in messageList:
+    #     print(line)
+    # if messageList[0].split(' ')[0] == 'J':
+    #     clientJoin(messageList, clientSocket, P2P.peerID)
+    #     P2P.peerID += 1
+    # elif messageList[0].split(' ')[0] == 'R':
+    #     provideActivePeers(messageList, clientSocket)
 
 
 # Functionality of centralized server
