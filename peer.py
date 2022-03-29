@@ -38,6 +38,8 @@ def peerConnection(clientSocket):
     # Determine the message type provided by another peer
     if (messageType == b'L'):
         unpackActivePeers(data)
+    if (messageType == b'A'):
+        unpackAcknowledgementStatement(data)
     clientSocket.close()
 
 
@@ -69,8 +71,35 @@ def sendRequestToServer(request, serverHost, serverPort):
     # Determine the message type provided by server
     if (messageType == b'L'):
         unpackActivePeers(response)
+    if (messageType == b'S'):
+        unpackAttendanceStatus(response)
 
     clientSocket.close()
+
+
+# Send the response of the peer responding to the image with message type "U"
+def packImageResponse(port, host, response):
+    # sending response to index server
+    imageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    imageSocket.connect((serverHost, serverPort))
+
+    print("Made it to imageResponse")
+    messageType = 'U'.encode()
+
+    # peerID hardcoded until P is written
+    peerID = 1
+
+    message = host + " " + str(port) + " " + response
+
+    message = messageType + message.encode()
+
+    messageSize = len(message)
+    message = messageSize.to_bytes(2, 'little') + message
+    print(message)
+    print(message[1:])
+    imageSocket.send(message)
+    imageSocket.close()
+
 
 # Send the dictionary of active peers with message type "L"
 def sendActivePeers(peerSocket):
@@ -96,26 +125,20 @@ def sendActivePeers(peerSocket):
     peerSocket.close()
 
 
-# Unpack the message type sending the list of active peers
-def unpackActivePeers(message):
-    messageContent = message[2:]
-    serializedActivePeers = messageContent[1:]
-    # Convert the byte string to a dictionary object
-    deserializedActivePeers = pickle.loads(serializedActivePeers)
-    P2P.activePeers = deserializedActivePeers
-    print(P2P.activePeers)
-
-
-# Handle quitting
-# def quitConnection(serverHost, serverPort):
-#     note = "EXIT P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
-#     sendRequestToServer(note, serverHost, serverPort)
-
-
-# Request dictionary of active peers from the index server
+# Request dictionary of active peers from the index server with message type "R"
 def getActivePeers(serverHost, serverPort):
-    note = "R  \nHost: " + serverHost + '\n' + "Port: " + str(serverPort) + "\nGET"
-    sendRequestToServer(note, serverHost, serverPort)
+    messageContent = serverHost + " " + str(serverPort) + " " + "GET"
+
+    messageType = 'R'.encode()
+
+    message = messageType + messageContent.encode()
+
+    messageSize = len(message)
+
+    message = messageSize.to_bytes(2, "little") + message
+
+    # replaced note with message
+    sendRequestToServer(message, serverHost, serverPort)
 
 
 # Send request to index server to join network with message type "J"
@@ -124,7 +147,7 @@ def joinIndexServer(serverHost, serverPort):
     messageType = 'J'.encode()
 
     # Fill message content
-    messageContent = peerHost + " " + str(peerPort) + " JOIN"
+    messageContent = peerHost + " " + str(peerPort) + " " + "JOIN"
 
     # Append message type to message content
     message = messageType + messageContent.encode()
@@ -137,6 +160,59 @@ def joinIndexServer(serverHost, serverPort):
 
     # Send message
     sendRequestToServer(message, serverHost, serverPort)
+
+
+# Send acknowledge statement to a peer with message type "A"
+def peerAcknowledgementStatement(peerSocket):
+    # Sending Acknowledge Statement to the peers
+    # Encode the message type
+    messageType = 'A'.encode()
+
+    # Fill message content
+    messageContent = "Image Sent"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message to peer to tell that image was sent
+    # sendToPeer(message)
+    peerSocket.send(message)
+    peerSocket.close()
+
+
+# Unpack the message type sending the list of active peers
+def unpackActivePeers(message):
+    messageContent = message[2:]
+    serializedActivePeers = messageContent[1:]
+    # Convert the byte string to a dictionary object
+    deserializedActivePeers = pickle.loads(serializedActivePeers)
+    P2P.activePeers = deserializedActivePeers
+    print(P2P.activePeers)
+
+
+# unpack attendance status
+def unpackAttendanceStatus(message):
+    message = message[2:].decode()
+    attendance = message[1:]
+    print(attendance)
+
+
+def unpackAcknowledgementStatement(message):
+    messageContent = message[2:]
+    unpackedAcknowledgement = messageContent[1:]
+    print(unpackedAcknowledgement)
+
+
+# Handle quitting
+# def quitConnection(serverHost, serverPort):
+#     note = "EXIT P2P\nHost: " + serverHost + '\n' + "Port: " + str(serverPort)
+#     sendRequestToServer(note, serverHost, serverPort)
 
 
 # Get the IP address from peer machine
