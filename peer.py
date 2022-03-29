@@ -103,6 +103,7 @@ def unpackActivePeers(message):
     # Convert the byte string to a dictionary object
     deserializedActivePeers = pickle.loads(serializedActivePeers)
     P2P.activePeers = deserializedActivePeers
+    print("Current Peer List:")
     print(P2P.activePeers)
 
 
@@ -114,8 +115,19 @@ def unpackActivePeers(message):
 
 # Request dictionary of active peers from the index server
 def getActivePeers(serverHost, serverPort):
-    note = "R  \nHost: " + serverHost + '\n' + "Port: " + str(serverPort) + "\nGET"
-    sendRequestToServer(note, serverHost, serverPort)
+
+        messageContent = serverHost + " " + str(serverPort) + " " + "GET"
+
+        messageType = 'R'.encode()
+
+        message = messageType + messageContent.encode()
+
+        messageSize = len(message)
+
+        message = messageSize.to_bytes(2, "little") + message
+
+        # replaced note with message
+        sendRequestToServer(message, serverHost, serverPort)
 
 
 # Send request to index server to join network with message type "J"
@@ -177,7 +189,7 @@ if __name__ == '__main__':
     while (True):
         print("What do you want to do? Enter number corresponding to an option you choose:")
         print("1. Send image")
-        print("2. Request index from server")
+        print("2. Request index from server - Gio was here! :)")
         print("3. Send index to a peer")
         # Functionality of centralized server
         option = int(input())

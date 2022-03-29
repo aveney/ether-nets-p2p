@@ -26,6 +26,17 @@ def unpackJoin(messageData, clientSocket, peerID):
     print(P2P.activePeers)
     provideActivePeers(clientSocket)
 
+#Unpacking function for requesting peer dictionary for index server
+def unpackRequestActivePeers(message, clientSocket, serverPort):
+    message = message[2:].decode()
+    peerInfo = message[1:]
+    print(peerInfo)
+
+    print("Current Index Server: ")
+    print(P2P.activePeers)
+    provideActivePeers(clientSocket)
+
+
 
 # Send active peers dictionary to the requesting client
 def provideActivePeers(clientSocket):
@@ -58,6 +69,8 @@ def newConnection(clientSocket):
     if (messageType == b'J'):
         unpackJoin(message, clientSocket, P2P.peerID)
         P2P.peerID += 1
+    if (messageType == b'R'):
+        unpackJoin(message, clientSocket, P2P.peerID)
     # print(messageList)
 
     # for line in messageList:
