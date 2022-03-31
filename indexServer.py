@@ -9,6 +9,95 @@ class P2P:
 
     peerID = 0
 
+    eventStarted = False
+
+
+# Get attendance status from client and then pack it
+def packAttendanceStatus(attendanceStatus, clientSocket):
+    # encode the message type
+    messageType = 'S'.encode()
+
+    # get attendance status
+    attendance = attendanceStatus.encode()
+
+    # append message type to attendance
+    message = messageType + attendance
+
+    # get the length of the message
+    messageSize = len(message)
+
+    # convert message to bytes
+    message = messageSize.to_bytes(2, "little") + message
+
+    clientSocket.send(message)
+
+    clientSocket.close()
+
+
+# Send active peers dictionary to the requesting client
+def provideActivePeers(clientSocket):
+    # Get IP and port from client
+    # host = messageData[1].split(':')[1]
+    # port = messageData[2].split(':')[1]
+
+    print("Sending active peers list...")
+
+    messageType = 'L'.encode()
+    # Convert dictionary of active peers to a byte string
+    serializedActivePeers = pickle.dumps(P2P.activePeers)
+    message = messageType + serializedActivePeers
+    messageSize = len(message)
+
+    message = messageSize.to_bytes(2, 'little') + message
+    # Send the string
+    clientSocket.send(message)
+    # clientSocket.close()
+
+
+def indexAcknowledgeStatement(clientSocket):
+    # Sending Acknowledge Statement to Index Server
+    # Encode the message type
+    messageType = 'A'.encode()
+
+    # Fill message content
+    messageContent = 'Message Sent'
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message
+    clientSocket.send(message)
+    clientSocket.close()
+
+
+def sendEventStarted(clientSocket):
+    P2P.eventStarted = True
+
+    # Encode the message type
+    messageType = 'M'.encode()
+
+    # Fill message content
+    messageContent = "Event confirmed"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message
+    clientSocket.send(message)
+    clientSocket.close()
+
 
 # Client joining the network
 def unpackJoin(messageData, clientSocket, peerID):
@@ -25,6 +114,7 @@ def unpackJoin(messageData, clientSocket, peerID):
     print("Current Index Server: ")
     print(P2P.activePeers)
     provideActivePeers(clientSocket)
+    clientSocket.close()
 
 
 # Unpacking function for requesting peer dictionary for index server
@@ -68,68 +158,26 @@ def unpackAcknowledgeStatement(message):
     print(unpackedAcknowledgement)
 
 
-# Get attendance status from client and then pack it
-def packAttendanceStatus(attendanceStatus, clientSocket):
-    # encode the message type
-    messageType = 'S'.encode()
+def unpackEventStart(message, clientSocket):
+    messageContent = message[2:]
+    unpackedStartMessage = messageContent[1:].decode()
 
-    # get attendance status
-    attendance = attendanceStatus.encode()
+    # Change status of the event to started
+    P2P.eventStarted = True
 
-    # append message type to attendance
-    message = messageType + attendance
-
-    # get the length of the message
-    messageSize = len(message)
-
-    # convert message to bytes
-    message = messageSize.to_bytes(2, "little") + message
-
-    clientSocket.send(message)
-
-    clientSocket.close()
+    # Provide the list of active peers
+    provideActivePeers(clientSocket)
+    confirmEventStarted()
+    print(unpackedStartMessage)
 
 
-# Send active peers dictionary to the requesting client
-def provideActivePeers(clientSocket):
-    # Get IP and port from client
-    # host = messageData[1].split(':')[1]
-    # port = messageData[2].split(':')[1]
-
-    print("Sending active peers list...")
-
-    messageType = 'L'.encode()
-    # Convert dictionary of active peers to a byte string
-    serializedActivePeers = pickle.dumps(P2P.activePeers)
-    message = messageType + serializedActivePeers
-    messageSize = len(message)
-
-    message = messageSize.to_bytes(2, 'little') + message
-    # Send the string
-    clientSocket.send(message)
-    clientSocket.close()
-
-
-def indexAcknowledgeStatement(clientSocket):
-    # Sending Acknowledge Statement to Index Server
-    # Encode the message type
-    messageType = 'A'.encode()
-
-    # Fill message content
-    messageContent = 'Message Sent'
-
-    # Append message type to message content
-    message = messageType + messageContent.encode()
-
-    # Get the size of the message
-    messageSize = len(message)
-
-    # Append message size to the message
-    message = messageSize.to_bytes(2, 'little') + message
-
-    # Send message
-    clientSocket.send(message)
-    clientSocket.close()
+def confirmEventStarted():
+    if (len(P2P.activePeers) > 0):
+        eventCoordHost = P2P.activePeers[0][0]
+        eventCoordPort = P2P.activePeers[0][1]
+        peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        peerSocket.connect((eventCoordHost, int(eventCoordPort)))
+        sendEventStarted(peerSocket)
 
 
 # Handle new requests from clients
@@ -149,6 +197,8 @@ def newConnection(clientSocket):
         unpackImageResponse(message)
     if (messageType == b'A'):
         unpackAcknowledgeStatement(message)
+    if (messageType == b'M'):
+        unpackEventStart(message, clientSocket)
     # print(messageList)
 
     # for line in messageList:

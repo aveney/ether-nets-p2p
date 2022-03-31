@@ -9,6 +9,8 @@ class P2P:
     # Dictionary to retain active peers
     activePeers = {}
 
+    eventStarted = False
+
 
 # This will handle the uploading of images/messages
 def peerServer(peerPort):
@@ -40,6 +42,10 @@ def peerConnection(clientSocket):
         unpackActivePeers(data)
     if (messageType == b'A'):
         unpackAcknowledgementStatement(data)
+    if (messageType == b'M'):
+        unpackEventStart(data)
+        # Change status of the event to started
+        P2P.eventStarted = True
     clientSocket.close()
 
 
@@ -73,7 +79,8 @@ def sendRequestToServer(request, serverHost, serverPort):
         unpackActivePeers(response)
     if (messageType == b'S'):
         unpackAttendanceStatus(response)
-
+    if (messageType == b'M'):
+        unpackEventStart(response)
     clientSocket.close()
 
 
@@ -186,27 +193,100 @@ def peerAcknowledgementStatement(peerSocket):
     peerSocket.close()
 
 
+# Send message to server that event coordinator has started event
+def sendEventStartedToServer(serverHost, serverPort):
+
+    # Encode the message type
+    messageType = 'M'.encode()
+
+    # Fill message content
+    messageContent = "Event started"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message
+    sendRequestToServer(message, serverHost, serverPort)
+
+
+# Sent by event coordinator to let peers know the event has started
+def sendEventStartedToPeer(peerHost, peerPort):
+
+    # Encode the message type
+    messageType = 'M'.encode()
+
+    # Fill message content
+    messageContent = "Event started"
+
+    # Append message type to message content
+    message = messageType + messageContent.encode()
+
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    # Send message
+    peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    peerSocket.connect((peerHost, peerPort))
+    peerSocket.send(message)
+    peerSocket.close()
+
+
 # Unpack the message type sending the list of active peers
 def unpackActivePeers(message):
+
+    # Message content
     messageContent = message[2:]
     serializedActivePeers = messageContent[1:]
+
     # Convert the byte string to a dictionary object
     deserializedActivePeers = pickle.loads(serializedActivePeers)
+
+    # Update the current list of active peers
     P2P.activePeers = deserializedActivePeers
     print(P2P.activePeers)
 
 
 # unpack attendance status
 def unpackAttendanceStatus(message):
+    # Message content
     message = message[2:].decode()
     attendance = message[1:]
+
+    # Print attendance status
     print(attendance)
 
 
+# Unpack acknowledge message type
 def unpackAcknowledgementStatement(message):
+
+    # Message content
     messageContent = message[2:]
     unpackedAcknowledgement = messageContent[1:]
+
+    # Print acknowledgement statement
     print(unpackedAcknowledgement)
+
+
+# Unpack event status message type
+def unpackEventStart(message):
+    # Change the status of the event for the meeting organizer
+    P2P.eventStarted = True
+
+    # Message content
+    messageContent = message[2:]
+    unpackedStartMessage = messageContent[1:].decode()
+
+    # Print event start confirmation
+    print(unpackedStartMessage)
 
 
 # Handle quitting
@@ -255,6 +335,7 @@ if __name__ == '__main__':
         print("1. Send image")
         print("2. Request index from server")
         print("3. Send index to a peer")
+        print("4. Start the meeting")
         # Functionality of centralized server
         option = int(input())
         if (option == 1):
@@ -268,5 +349,7 @@ if __name__ == '__main__':
             peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             peerSocket.connect((peerHost, peerPort))
             sendActivePeers(peerSocket)
+        elif (option == 4):
+            sendEventStartedToServer(serverHost, serverPort)
         else:
             print('please enter a valid choice')
