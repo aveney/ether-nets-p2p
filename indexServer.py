@@ -108,13 +108,22 @@ def unpackJoin(messageData, clientSocket, peerID):
     host = peerInfo.split(' ')[0]
     port = peerInfo.split(' ')[1]
 
-    # List for new client information
-    clientInfo = [host, port, "Absent"]
-    P2P.activePeers[peerID] = clientInfo
-    print("Current Index Server: ")
-    print(P2P.activePeers)
-    provideActivePeers(clientSocket)
-    clientSocket.close()
+    if (peerID == 0):
+        print("you have made it to peerID 0 in index server")
+        clientInfo = [host, port, "Organizer"]
+        P2P.activePeers[peerID] = clientInfo
+        print("organizer is : "  + str(P2P.activePeers[0]))
+        provideActivePeers(clientSocket)
+        clientSocket.close()
+    else:
+        # List for new client information
+        clientInfo = [host, port, "Absent"]
+        P2P.activePeers[peerID] = clientInfo
+        print("Current Index Server: ")
+        print(P2P.activePeers)
+        provideActivePeers(clientSocket)
+        clientSocket.close()
+
 
 
 # Unpacking function for requesting peer dictionary for index server
