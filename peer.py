@@ -10,6 +10,8 @@ class P2P:
     activePeers = {}
 
     eventStarted = False
+    peerNum = 0
+
 
 
 # This will handle the uploading of images/messages
@@ -24,29 +26,91 @@ def peerServer(peerPort):
         print('Got connection from', clientAddress)
         newThread = Thread(target=peerConnection, args=(clientSocket,))
         newThread.start()
-        print("What do you want to do? Enter number corresponding to an option you choose")
-        print("1. Send image")
     upload_socket.close()
 
 
-# Peer connection
 def peerConnection(clientSocket):
-    data = clientSocket.recv(1034)
-
+    data = clientSocket.recv(2)
+    lengthOfMessage = int.from_bytes(data, 'little')
+    print(lengthOfMessage)
+    data= clientSocket.recv(lengthOfMessage)
+    print('received ', len(data))
     print('New message from peer:')
-    messageContent = data[2:]
-    messageType = messageContent[:1]
+    messageContent = data[1:]
+    messageType = data[:1].decode()
+
 
     # Determine the message type provided by another peer
+    #print(messageType)
+   # print(messageContent)
+
+    if (messageType == b'P'):
+        ReceiveImageToPeer(messageContent)
+
     if (messageType == b'L'):
         unpackActivePeers(data)
+
     if (messageType == b'A'):
         unpackAcknowledgementStatement(data)
     if (messageType == b'M'):
         unpackEventStart(data)
+
         # Change status of the event to started
-        P2P.eventStarted = True
+    P2P.eventStarted = True
     clientSocket.close()
+
+# Send Image to the Peer
+def sendImageToPeer(image):
+    # The name and port number of peers receiving images/messages
+    receivingPeerHost = input("Enter the hostname of the receiving peer:")
+    receivingPeerPort = int(input("Enter port number of the receiving peer:"))
+
+    image = input("Enter the location of image to be sent to the peer:")
+    #print(image)
+    with open(image, "rb") as imageToSend:
+        converted_image = base64.b64encode(imageToSend.read())
+#added
+   # with open('encode.bin', "wb") as imageToSend:
+    #    imageToSend.write(converted_image)
+        #print(converted_image)
+#code
+    # Encode the message type
+    messageType = 'P'.encode()
+
+    # Fill message content
+    messageContent = converted_image
+
+    # Append message type to message content
+    #       messageType +
+    message =  messageType + messageContent
+    print(message)
+    # Get the size of the message
+    messageSize = len(message)
+
+    # Append message size to the message
+    message = messageSize.to_bytes(2, 'little') + message
+
+    #print(message)
+    # Create socket to send the image
+    peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    peerSocket.connect((receivingPeerHost, receivingPeerPort))
+
+    #print("beforewhile")
+    peerSocket.send(message)
+    #print("massage:")
+    #print(message)
+
+# Decode image from the peer
+def ReceiveImageToPeer(messageContent):
+
+
+    print(messageContent)
+
+    decodeit = open('image.jpeg', 'wb')
+    decodeit.write(base64.b64decode((messageContent)))
+    #print(byte)
+    decodeit.close()
+
 
 
 # Send to peer
@@ -73,6 +137,8 @@ def sendRequestToServer(request, serverHost, serverPort):
     response = clientSocket.recv(1024)
     messageContent = response[2:]
     messageType = messageContent[:1]
+    #print("You have reached sendRequestToServer ")
+    print(messageType)
 
     # Determine the message type provided by server
     if (messageType == b'L'):
@@ -82,6 +148,7 @@ def sendRequestToServer(request, serverHost, serverPort):
     if (messageType == b'M'):
         unpackEventStart(response)
     clientSocket.close()
+
 
 
 # Send the response of the peer responding to the image with message type "U"
@@ -247,6 +314,7 @@ def unpackActivePeers(message):
     messageContent = message[2:]
     serializedActivePeers = messageContent[1:]
 
+
     # Convert the byte string to a dictionary object
     deserializedActivePeers = pickle.loads(serializedActivePeers)
 
@@ -323,33 +391,44 @@ if __name__ == '__main__':
     # Message sent to join the system
     joinIndexServer(serverHost, serverPort)
 
-    print("Wait for instructions from event organizer...")
-    uploadThread = Thread(target=peerServer, args=(peerPort,))
-    # destroy this upload thread on quitting
-    uploadThread.daemon = True
-    uploadThread.start()
+    if (len(P2P.activePeers) < 2):
+        print("You are the event organizor")
+        UploadThread = Thread(target=peerServer, args=(peerPort,))
+        UploadThread.start()
+        print("Input 1 to start meeting")
+        control = 0
+        while (control != 1):
+            control = int(input("Input option here: "))
+        sendEventStartedToServer(serverHost, serverPort)
 
-    # Handle input from the client
-    while (True):
-        print("What do you want to do? Enter number corresponding to an option you choose:")
-        print("1. Send image")
-        print("2. Request index from server")
-        print("3. Send index to a peer")
-        print("4. Start the meeting")
-        # Functionality of centralized server
-        option = int(input())
-        if (option == 1):
-            message = input()
-            sendToPeer(message)
-        elif (option == 2):
-            getActivePeers(serverHost, serverPort)
-        elif (option == 3):
-            peerHost = input("Enter peer IP Address:")
-            peerPort = int(input("Enter the port the peer is running on:"))
-            peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            peerSocket.connect((peerHost, peerPort))
-            sendActivePeers(peerSocket)
-        elif (option == 4):
-            sendEventStartedToServer(serverHost, serverPort)
-        else:
-            print('please enter a valid choice')
+    else:
+        print("Wait for instructions from event organizer...")
+        uploadThread = Thread(target=peerServer, args=(peerPort,))
+        # destroy this upload thread on quitting
+        uploadThread.daemon = True
+        uploadThread.start()
+
+        # Handle input from the client
+        while (True):
+            print("What do you want to do? Enter number corresponding to an option you choose:")
+            print("1. Send image")
+            print("2. Request index from server")
+            print("3. Send index to a peer")
+            print("4. Start the meeting")
+            # Functionality of centralized server
+            option = int(input())
+            if (option == 1):
+                message = input()
+                sendToPeer(message)
+            elif (option == 2):
+                getActivePeers(serverHost, serverPort)
+            elif (option == 3):
+                peerHost = input("Enter peer IP Address:")
+                peerPort = int(input("Enter the port the peer is running on:"))
+                peerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                peerSocket.connect((peerHost, peerPort))
+                sendActivePeers(peerSocket)
+            elif (option == 4):
+                sendEventStartedToServer(serverHost, serverPort)
+            else:
+                print('please enter a valid choice')

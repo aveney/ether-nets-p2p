@@ -108,13 +108,21 @@ def unpackJoin(messageData, clientSocket, peerID):
     host = peerInfo.split(' ')[0]
     port = peerInfo.split(' ')[1]
 
-    # List for new client information
-    clientInfo = [host, port, "Absent"]
-    P2P.activePeers[peerID] = clientInfo
-    print("Current Index Server: ")
-    print(P2P.activePeers)
-    provideActivePeers(clientSocket)
-    clientSocket.close()
+    if (peerID == 0):
+        clientInfo = [host, port, "Organizer"]
+        P2P.activePeers[peerID] = clientInfo
+        print("organizer is : "  + str(P2P.activePeers[0]))
+        organizerWaitEventStart(clientSocket)
+        clientSocket.close()
+    else:
+        # List for new client information
+        clientInfo = [host, port, "Absent"]
+        P2P.activePeers[peerID] = clientInfo
+        print("Current Index Server: ")
+        print(P2P.activePeers)
+        organizerWaitEventStart(clientSocket)
+        clientSocket.close()
+
 
 
 # Unpacking function for requesting peer dictionary for index server
@@ -209,6 +217,19 @@ def newConnection(clientSocket):
     # elif messageList[0].split(' ')[0] == 'R':
     #     provideActivePeers(messageList, clientSocket)
 
+def organizerWaitEventStart(clientSocket):
+   # host = clientSocket.split(' ')[0]
+   # port = clientSocket.split(' ')[1]              Not used
+   # clientInfo = [host, port, "Absent"]
+    if (len(P2P.activePeers) == 1):
+        provideActivePeers(clientSocket)
+    elif (len(P2P.activePeers) > 1):
+        provideActivePeers(clientSocket)
+        eventCoordHost = P2P.activePeers[0][0]
+        eventCoordPort = P2P.activePeers[0][1]
+        EventCoordinatorSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        EventCoordinatorSocket.connect((eventCoordHost, int(eventCoordPort)))
+        provideActivePeers(EventCoordinatorSocket)
 
 # Functionality of centralized server
 if __name__ == '__main__':
