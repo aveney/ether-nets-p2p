@@ -1,3 +1,4 @@
+import base64
 import socket
 from threading import Thread
 import os
@@ -35,14 +36,14 @@ def peerConnection(clientSocket):
     print(lengthOfMessage)
     data= clientSocket.recv(lengthOfMessage)
     print('received ', len(data))
-    print('New message from peer:')
+    print('New message:')
     messageContent = data[1:]
-    messageType = data[:1].decode()
+    messageType = data[:1]
 
 
     # Determine the message type provided by another peer
     #print(messageType)
-   # print(messageContent)
+    #print(messageContent)
 
     if (messageType == b'P'):
         ReceiveImageToPeer(messageContent)
@@ -350,8 +351,7 @@ def unpackEventStart(message):
     P2P.eventStarted = True
 
     # Message content
-    messageContent = message[2:]
-    unpackedStartMessage = messageContent[1:].decode()
+    unpackedStartMessage = message[1:].decode()
 
     # Print event start confirmation
     print(unpackedStartMessage)
@@ -418,8 +418,9 @@ if __name__ == '__main__':
             # Functionality of centralized server
             option = int(input())
             if (option == 1):
-                message = input()
-                sendToPeer(message)
+                image = input()
+                # print("inside main")
+                sendImageToPeer(image)
             elif (option == 2):
                 getActivePeers(serverHost, serverPort)
             elif (option == 3):
