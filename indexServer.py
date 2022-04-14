@@ -111,18 +111,17 @@ def unpackJoin(messageData, clientSocket, peerID):
     if (peerID == 0):
         clientInfo = [host, port, "Organizer"]
         P2P.activePeers[peerID] = clientInfo
-        print("organizer is : "  + str(P2P.activePeers[0]))
+        print("organizer is : " + str(P2P.activePeers[0]))
         organizerWaitEventStart(clientSocket)
         clientSocket.close()
     else:
         # List for new client information
-        clientInfo = [host, port, "Absent"]
+        clientInfo = [host, port, "Absent", []]
         P2P.activePeers[peerID] = clientInfo
         print("Current Index Server: ")
         print(P2P.activePeers)
         organizerWaitEventStart(clientSocket)
         clientSocket.close()
-
 
 
 # Unpacking function for requesting peer dictionary for index server
@@ -145,9 +144,15 @@ def unpackImageResponse(messageData):
     peerInfo = message[1:]
     print(message)
 
-    peerHost = peerInfo.split(' ')[0]
-    peerPort = int(peerInfo.split(' ')[1])
-    peerResponse = peerInfo.split(' ')[2]
+    sendingPeerID = int(peerInfo.split(' ')[0])
+    peerHost = peerInfo.split(' ')[1]
+    peerPort = int(peerInfo.split(' ')[2])
+    peerResponse = peerInfo.split(' ')[3]
+
+    print(sendingPeerID)
+    print(peerHost)
+    print(peerPort)
+    print(peerResponse)
 
     # Run step for determining status for a peer
     # if (peerResponse == "yes"):
@@ -203,6 +208,7 @@ def newConnection(clientSocket):
         unpackRequestActivePeers(message, clientSocket)
     if (messageType == b'U'):
         unpackImageResponse(message)
+        indexAcknowledgeStatement(clientSocket)
     if (messageType == b'A'):
         unpackAcknowledgeStatement(message)
     if (messageType == b'M'):
@@ -217,10 +223,11 @@ def newConnection(clientSocket):
     # elif messageList[0].split(' ')[0] == 'R':
     #     provideActivePeers(messageList, clientSocket)
 
+
 def organizerWaitEventStart(clientSocket):
-   # host = clientSocket.split(' ')[0]
-   # port = clientSocket.split(' ')[1]              Not used
-   # clientInfo = [host, port, "Absent"]
+    # host = clientSocket.split(' ')[0]
+    # port = clientSocket.split(' ')[1]              Not used
+    # clientInfo = [host, port, "Absent"]
     if (len(P2P.activePeers) == 1):
         provideActivePeers(clientSocket)
     elif (len(P2P.activePeers) > 1):
@@ -230,6 +237,7 @@ def organizerWaitEventStart(clientSocket):
         EventCoordinatorSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         EventCoordinatorSocket.connect((eventCoordHost, int(eventCoordPort)))
         provideActivePeers(EventCoordinatorSocket)
+
 
 # Functionality of centralized server
 if __name__ == '__main__':
