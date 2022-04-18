@@ -154,15 +154,20 @@ def unpackImageResponse(messageData):
     print(peerPort)
     print(peerResponse)
 
-    # Run step for determining status for a peer
-    # if (peerResponse == "yes"):
-    #     P2P.activePeers[1] = [str(peerHost), peerPort, "Present"] # hardcoded peerID
-    # elif (peerResponse == "no"):
-    #     P2P.activePeers[1] = [str(peerHost), peerPort, "Absent"]
-    # else:
-    #     print("Something went wrong when verifying image")
+    if (peerResponse == "yes"):
+        token = P2P.activePeers[sendingPeerID][2]
+        print("token is: " + token)
+        if (token == "1 token"):
+            P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "Present"]
+        else:
+            P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "1 token"]
+    elif (peerResponse == "no"):
+        P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "Absent"]
+    else:
+        print("Something went wrong when verifying image")
 
-    # print(P2P.activePeers[1])
+    print("updated info is: ")
+    print(P2P.activePeers[sendingPeerID])
 
 
 def unpackAcknowledgeStatement(message):
