@@ -556,6 +556,14 @@ def promptImageResponse():
     answer = input()
     packImageResponse(serverHost, serverPort, answer, P2P.sendingPeerID)
 
+    # timeout = 60
+    # t = Timer(timeout, print, ['Sorry, times up'])
+    # t.start()
+    # prompt = "You have %d seconds to choose the correct answer...\n" % timeout
+    # answer = input(prompt)
+    # packImageResponse(serverHost, serverPort, answer, P2P.sendingPeerID)
+    # t.cancel()
+
 
 # Handle quitting
 # def quitConnection(serverHost, serverPort):
