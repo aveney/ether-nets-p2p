@@ -154,20 +154,42 @@ def unpackImageResponse(messageData):
     print(peerPort)
     print(peerResponse)
 
-    if (peerResponse == "yes"):
-        token = P2P.activePeers[sendingPeerID][2]
-        print("token is: " + token)
-        if (token == "1 token"):
-            P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "Present"]
-        else:
-            P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "1 token"]
-    elif (peerResponse == "no"):
-        P2P.activePeers[sendingPeerID] = [str(peerHost), peerPort, "Absent"]
-    else:
-        print("Something went wrong when verifying image")
+    SendingPeer = P2P.activePeers[sendingPeerID]
+    SendingPeer[3].append(peerResponse)
+
+    if (len(SendingPeer[3]) >= 2):
+        updatePeerAttendance(sendingPeerID, peerHost, peerPort, peerResponse)
+
+
 
     print("updated info is: ")
     print(P2P.activePeers[sendingPeerID])
+
+def updatePeerAttendance (sendingPeerID, peerHost,peerPort,Response):
+    yes_count = 0;
+    token = False
+    for x in P2P.activePeers[sendingPeerID][3]:
+        if (x == "token"):
+            token = True
+        if (x == "no"):
+            # Automatically ends for loop if it finds one no
+            P2P.activePeers[sendingPeerID][2] = "Absent"
+            break;
+        elif (x == "yes"):
+            yes_count +=1
+
+        if (yes_count >=2):
+            #if there are at least 2 yes then they are marked present
+            P2P.activePeers[sendingPeerID][2] = "present"
+            break
+        if (token == True and yes_count >= 1):
+            #passes if one of the peers sends a token and theres one peer the response yes
+            P2P.activePeers[sendingPeerID][2] = "present"
+            break;
+
+
+
+
 
 
 def unpackAcknowledgeStatement(message):
