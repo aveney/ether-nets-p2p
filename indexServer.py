@@ -181,13 +181,16 @@ def updatePeerAttendance (sendingPeerID, peerHost,peerPort,Response):
         if (yes_count >=2):
             #if there are at least 2 yes then they are marked present
             P2P.activePeers[sendingPeerID][2] = "present"
-            break
+            break;
         if (token == True and yes_count >= 1):
             #passes if one of the peers sends a token and theres one peer the response yes
             P2P.activePeers[sendingPeerID][2] = "present"
             break;
 
-
+    attendanceStatusToBeSent = P2P.activePeers[sendingPeerID][2]
+    newSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    newSocket.connect((peerHost, peerPort))
+    packAttendanceStatus(attendanceStatusToBeSent, newSocket)
 
 
 

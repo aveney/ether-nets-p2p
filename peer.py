@@ -548,7 +548,7 @@ def sendImageToPeers(image, peerHost1, peerPort1, peerHost2, peerPort2):
 def promptImageResponse():
     if (P2P.imageSent == False):
         print("Enter location of image file, then answer the following question:")
-        print("Is peer " + str(P2P.sendingPeerID) + " in attendance?(yes/no)")
+
     else:
         print("Is peer " + str(P2P.sendingPeerID) + " in attendance?")
         print("Enter yes/no: ")
