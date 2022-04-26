@@ -1,7 +1,8 @@
 import socket
 from threading import Thread
 import pickle
-
+import os
+import re
 
 class P2P:
     # Dictionary to retain active peers
@@ -266,13 +267,28 @@ def organizerWaitEventStart(clientSocket):
         provideActivePeers(EventCoordinatorSocket)
 
 
+def get_ip(ifaces=['wlan1', 'eth0', 'wlan0']):
+    if isinstance(ifaces, str):
+        ifaces = [ifaces]
+    for iface in list(ifaces):
+        search_str = f'ifconfig {iface}'
+        result = os.popen(search_str).read()
+        com = re.compile(r'(?<=inet )(.*)(?= netmask)', re.M)
+        ipv4 = re.search(com, result)
+        if ipv4:
+            ipv4 = ipv4.groups()[0]
+            return ipv4
+    return ''
+
+
 # Functionality of centralized server
 if __name__ == '__main__':
     # Create a new socket object
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Set the IP address and port for the central server
-    serverHost = input("Enter the IP address of the central server: ")
+    # serverHost = input("Enter the IP address of the central server: ")
+    serverHost = get_ip("en0")
     serverPort = 7734
 
     # Bind to the port
