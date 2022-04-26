@@ -586,14 +586,28 @@ def get_ip(ifaces=['en0']):
     return ''
 
 
+def get_ip(ifaces=['en0']):
+    if isinstance(ifaces, str):
+        ifaces = [ifaces]
+    for iface in list(ifaces):
+        search_str = f'ifconfig {iface}'
+        result = os.popen(search_str).read()
+        com = re.compile(r'(?<=inet )(.*)(?= netmask)', re.M)
+        ipv4 = re.search(com, result)
+        if ipv4:
+            ipv4 = ipv4.groups()[0]
+            return ipv4
+    return ''
+
+
 # Main client functionality
 if __name__ == '__main__':
     # The IP address and port number for the client
-    peerHost = input("Enter an unused hostname:")
+    peerHost = get_ip("en0") #input("Enter an unused hostname:")
     peerPort = int(input("Enter an unused port:"))
 
     # The IP address and port number for the server
-    serverHost = input("Enter the hostname for the Index Server:")
+    serverHost = peerHost #input("Enter the hostname for the Index Server:")
     serverPort = 7734
     P2P.serverHost = serverHost
     P2P.serverPort = serverPort
